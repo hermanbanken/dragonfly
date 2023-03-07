@@ -15,6 +15,7 @@ extern "C" {
 #include "server/server_state.h"
 #include "server/tiered_storage.h"
 #include "server/transaction.h"
+#include "util/fibers/uring_proactor.h"
 #include "util/varz.h"
 
 using namespace std;
@@ -251,6 +252,11 @@ void EngineShard::InitThreadLocal(ProactorBase* pb, bool update_db_time) {
 
   CompactObj::InitThreadLocal(shard_->memory_resource());
   SmallString::InitThreadLocal(data_heap);
+
+  bool is_iouring = pb->GetKind() == ProactorBase::IOURING;
+  if (is_iouring) {
+    static_cast<fb2::UringProactor*>(pb)->RegisterBuffers();
+  }
 
   string backing_prefix = GetFlag(FLAGS_spill_file_prefix);
   if (!backing_prefix.empty()) {

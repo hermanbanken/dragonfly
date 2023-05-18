@@ -137,7 +137,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             QEMU_CPU=max,pauth-impdef=on
-          push: true
+          push: false
           tags: |
             ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
@@ -156,3 +156,19 @@ jobs:
             echo "Redis ping failed"
             exit 1
           fi
+
+      - if: ${{ hashFiles(format('{0}-{1}', matrix.dockerfile, inputs.build_type)) }}
+        name: Push release image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            QEMU_CPU=max,pauth-impdef=on
+          tags: |
+            ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          file: ${{ matrix.dockerfile }}-${{ inputs.build_type }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

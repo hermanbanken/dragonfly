@@ -144,3 +144,15 @@ jobs:
           file: ${{ matrix.dockerfile }}-${{ inputs.build_type }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Test Docker run
+        run: |
+          # docker run with port-forwarding
+          # install redis-tools
+          sudo apt-get install redis-tools -y
+          docker run -d -p 6379:6379 {{ inputs.image }}:latest
+          # ping with redis-cli and expect PONG
+          if [ $(redis-cli -h localhost ping) != "PONG" ]; then
+            echo "Redis ping failed"
+            exit 1
+          fi

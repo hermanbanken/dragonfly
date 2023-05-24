@@ -150,11 +150,15 @@ jobs:
           # docker run with port-forwarding
           # install redis-tools
           sudo apt-get install redis-tools -y
-          # take only one tag
-          tag=$(echo ${{ steps.metadata.outputs.tags }} | cut -d'\n' -f1)
-          docker run -d -p 6379:6379 ${{ inputs.image }}:$tag
+          tag=${{ steps.metadata.outputs.tags }}
+          # check if we have multiple tags
+          if [[ $(echo $tag | wc -l) -gt 1 ]]; then
+            # take the first tag from $tag
+            tag=$(echo $tag | head -n 1)
+          fi
+          docker run -d -p 6379:6379 $tag
           # ping with redis-cli and expect PONG
-          if [ $(redis-cli -h localhost ping) != "PONG" ]; then
+          if [[ $(redis-cli -h localhost ping) != "PONG" ]]; then
             echo "Redis ping failed"
             exit 1
           fi

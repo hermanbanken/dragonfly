@@ -965,11 +965,12 @@ void ListFamily::LPos(CmdArgList args, ConnectionContext* cntx) {
       (*cntx)->SendLong((*result)[0]);
     }
   } else {
-    (*cntx)->StartArray(result->size());
+    (*cntx)->StartArray(result->size(), true);
     const auto& array = result.value();
     for (const auto& v : array) {
       (*cntx)->SendLong(v);
     }
+    (*cntx)->StopAggregate();
   }
 }
 

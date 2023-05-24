@@ -775,7 +775,7 @@ void HSetFamily::HMGet(CmdArgList args, ConnectionContext* cntx) {
   OpResult<vector<OptStr>> result = cntx->transaction->ScheduleSingleHopT(std::move(cb));
 
   if (result) {
-    (*cntx)->StartArray(result->size());
+    (*cntx)->StartArray(result->size(), true);
     for (const auto& val : *result) {
       if (val) {
         (*cntx)->SendBulkString(*val);
@@ -783,11 +783,13 @@ void HSetFamily::HMGet(CmdArgList args, ConnectionContext* cntx) {
         (*cntx)->SendNull();
       }
     }
+    (*cntx)->StopAggregate();
   } else if (result.status() == OpStatus::KEY_NOTFOUND) {
-    (*cntx)->StartArray(args.size());
+    (*cntx)->StartArray(args.size(), true);
     for (unsigned i = 0; i < args.size(); ++i) {
       (*cntx)->SendNull();
     }
+    (*cntx)->StopAggregate();
   } else {
     (*cntx)->SendError(result.status());
   }

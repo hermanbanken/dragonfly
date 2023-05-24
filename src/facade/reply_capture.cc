@@ -96,7 +96,7 @@ void CapturingReplyBuilder::SendScoredArray(const std::vector<std::pair<std::str
   Capture(ScoredArray{arr, with_scores});
 }
 
-void CapturingReplyBuilder::StartCollection(unsigned len, CollectionType type) {
+void CapturingReplyBuilder::StartCollection(unsigned len, CollectionType type, bool aggregate) {
   SKIP_LESS(ReplyMode::FULL);
   stack_.emplace(make_unique<CollectionPayload>(len, type), type == MAP ? len * 2 : len);
 

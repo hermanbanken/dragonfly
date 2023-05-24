@@ -236,7 +236,7 @@ class InterpreterReplier : public RedisReplyBuilder {
 
   void SendBulkString(std::string_view str) final;
 
-  void StartCollection(unsigned len, CollectionType type) final;
+  void StartCollection(unsigned len, CollectionType type, bool aggregate) final;
 
  private:
   void PostItem();
@@ -387,7 +387,7 @@ void InterpreterReplier::SendBulkString(string_view str) {
   PostItem();
 }
 
-void InterpreterReplier::StartCollection(unsigned len, CollectionType) {
+void InterpreterReplier::StartCollection(unsigned len, CollectionType, bool aggregate) {
   explr_->OnArrayStart(len);
 
   if (len == 0) {
@@ -1524,7 +1524,7 @@ void Service::Exec(CmdArgList args, ConnectionContext* cntx) {
     Transaction* trans = cntx->transaction;
     cntx->transaction = nullptr;
 
-    rb->StartArray(body.size());
+    rb->StartArray(body.size(), true);
     for (auto& scmd : body) {
       arg_vec.resize(scmd.NumArgs() + 1);
       // We need to copy command name to the first argument.
@@ -1535,6 +1535,7 @@ void Service::Exec(CmdArgList args, ConnectionContext* cntx) {
 
       DispatchCommand(args, cntx);
     }
+    rb->StopAggregate();
     cntx->transaction = trans;
 
     return;
@@ -1549,7 +1550,7 @@ void Service::Exec(CmdArgList args, ConnectionContext* cntx) {
   }
 
   VLOG(1) << "StartExec " << exec_info.body.size();
-  rb->StartArray(exec_info.body.size());
+  rb->StartArray(exec_info.body.size(), true);
 
   if (!exec_info.body.empty()) {
     if (absl::GetFlag(FLAGS_multi_exec_squash)) {
@@ -1580,6 +1581,7 @@ void Service::Exec(CmdArgList args, ConnectionContext* cntx) {
       }
     }
   }
+  rb->StopAggregate();
 
   if (scheduled) {
     VLOG(1) << "Exec unlocking " << exec_info.body.size() << " commands";
